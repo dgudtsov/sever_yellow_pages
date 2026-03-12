@@ -187,12 +187,7 @@ function initWithSections(sections) {
 fetch("YellowPages-Северный.md")
   .then((response) => (response.ok ? response.text() : Promise.reject(response)))
   .then((text) => initWithSections(parseSections(text)))
-  .catch(() =>
-    fetch("TelegramMiniAppNavigation.md")
-      .then((response) => (response.ok ? response.text() : Promise.reject(response)))
-      .then((text) => initWithSections(parseSections(text)))
-      .catch(() => initWithSections(parseSections(markdownSource)))
-  );
+  .catch(() => initWithSections(parseSections(markdownSource)));
 
 searchInput.addEventListener("input", (event) => {
   applySearch(cachedSections, event.target.value);

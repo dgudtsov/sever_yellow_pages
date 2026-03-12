@@ -188,13 +188,45 @@ p {
 }
 
 .section li {
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: var(--bg-soft);
-  font-size: 14px;
+  list-style: none;
 }
 
-.section li.placeholder {
+.service {
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--bg-soft);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.service-name {
+  font-weight: 600;
+}
+
+.service-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.service-detail {
+  position: relative;
+  padding-left: 12px;
+}
+
+.service-detail::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent-2);
+}
+
+.service.placeholder {
   color: var(--muted);
   font-style: italic;
   background: rgba(0, 0, 0, 0.05);

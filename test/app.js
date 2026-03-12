@@ -1,15 +1,12 @@
-const markdownSource = `# Навигация по разделам (Telegram Mini App)
+const markdownSource = `# Северный - жёлтые страницы
 
-Выберите категорию, чтобы открыть список сервисов внутри мини‑приложения.
+## Администрация
 
-## Содержание
-
-- [Косметические услуги](#косметические-услуги)
-- [Парикмахерские](#парикмахерские)
-- [Детское образование](#детское-образование)
-- [Прочее](#прочее)
-- [Шиномонтаж и автосервис](#шиномонтаж-и-автосервис)
-- [Автомойки](#автомойки)
+- Управа района Северный
+\t- Москва, 9-я Северная линия, дом 5
+\t- 8(499)767-68-65
+\t- 8.00-17.00 (пн.-чт.) / 8.00-15.45 (пт.) 
+\t\t- Обед: 12.00-12.45
 
 ## Косметические услуги
 
@@ -23,17 +20,11 @@ const markdownSource = `# Навигация по разделам (Telegram Min
 
 - Панда
 
-## Прочее
-
-- Пока нет
+## 
 
 ## Шиномонтаж и автосервис
 
-- Пока нет
-
 ## Автомойки
-
-- Пока нет
 `;
 
 const contentEl = document.getElementById("content");
@@ -52,12 +43,18 @@ function parseSections(md) {
   const lines = md.split(/\r?\n/);
   const sections = [];
   let current = null;
+  let currentItem = null;
 
   lines.forEach((line) => {
     if (line.startsWith("## ")) {
       const title = line.slice(3).trim();
-      current = { title, items: [] };
-      sections.push(current);
+      if (title) {
+        current = { title, items: [] };
+        sections.push(current);
+      } else {
+        current = null;
+      }
+      currentItem = null;
       return;
     }
 
@@ -65,9 +62,21 @@ function parseSections(md) {
       return;
     }
 
-    if (line.startsWith("- ")) {
-      current.items.push(line.slice(2).trim());
+    const match = line.match(/^(\s*)- (.+)$/);
+    if (!match) return;
+
+    const indent = match[1] || "";
+    const text = match[2].trim();
+    if (!indent) {
+      currentItem = { name: text, details: [] };
+      current.items.push(currentItem);
+      return;
     }
+
+    if (!currentItem) return;
+    const normalized = indent.replace(/\t/g, "  ");
+    const level = Math.max(1, Math.floor(normalized.length / 2));
+    currentItem.details.push({ text, level });
   });
 
   return sections.filter((section) => section.title.toLowerCase() !== "содержание");
@@ -99,17 +108,37 @@ function render(sections) {
     const list = document.createElement("ul");
     section.items.forEach((item) => {
       const li = document.createElement("li");
-      li.textContent = item;
-      if (item.toLowerCase() === "пока нет") {
+      li.className = "service";
+
+      const name = document.createElement("div");
+      name.className = "service-name";
+      name.textContent = item.name;
+      li.appendChild(name);
+
+      if (item.details.length > 0) {
+        const details = document.createElement("div");
+        details.className = "service-details";
+        item.details.forEach((detail) => {
+          const line = document.createElement("div");
+          line.className = "service-detail";
+          line.style.paddingLeft = `${detail.level * 12}px`;
+          line.textContent = detail.text;
+          details.appendChild(line);
+        });
+        li.appendChild(details);
+      }
+
+      if (item.name.toLowerCase() === "пока нет") {
         li.classList.add("placeholder");
       }
+
       list.appendChild(li);
     });
 
     if (section.items.length === 0) {
       const li = document.createElement("li");
+      li.className = "service placeholder";
       li.textContent = "Пока нет";
-      li.classList.add("placeholder");
       list.appendChild(li);
     }
 
@@ -129,7 +158,12 @@ function applySearch(sections, query) {
   const filtered = sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => item.toLowerCase().includes(normalized)),
+      items: section.items.filter((item) => {
+        if (item.name.toLowerCase().includes(normalized)) return true;
+        return item.details.some((detail) =>
+          detail.text.toLowerCase().includes(normalized)
+        );
+      }),
     }))
     .filter((section) => section.items.length > 0);
 
@@ -150,10 +184,15 @@ function initWithSections(sections) {
   updateCount(cachedSections);
 }
 
-fetch("TelegramMiniAppNavigation.md")
+fetch("YellowPages-Северный.md")
   .then((response) => (response.ok ? response.text() : Promise.reject(response)))
   .then((text) => initWithSections(parseSections(text)))
-  .catch(() => initWithSections(parseSections(markdownSource)));
+  .catch(() =>
+    fetch("TelegramMiniAppNavigation.md")
+      .then((response) => (response.ok ? response.text() : Promise.reject(response)))
+      .then((text) => initWithSections(parseSections(text)))
+      .catch(() => initWithSections(parseSections(markdownSource)))
+  );
 
 searchInput.addEventListener("input", (event) => {
   applySearch(cachedSections, event.target.value);
